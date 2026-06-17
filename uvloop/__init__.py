@@ -2,10 +2,18 @@ import asyncio as __asyncio
 import typing as _typing
 import sys as _sys
 import warnings as _warnings
+import types as _types
 
 from . import includes as __includes  # NOQA
-from .loop import Loop as __BaseLoop  # NOQA
 from ._version import __version__  # NOQA
+
+if _sys.platform == 'win32':
+    if hasattr(__asyncio, 'ProactorEventLoop'):
+        __BaseLoop = __asyncio.ProactorEventLoop
+    else:
+        __BaseLoop = __asyncio.SelectorEventLoop
+else:
+    from .loop import Loop as __BaseLoop  # NOQA
 
 
 __all__: _typing.Tuple[str, ...] = ('new_event_loop', 'run')
@@ -15,8 +23,20 @@ _AbstractEventLoop = __asyncio.AbstractEventLoop
 _T = _typing.TypeVar("_T")
 
 
-class Loop(__BaseLoop, _AbstractEventLoop):  # type: ignore[misc]
-    pass
+if _sys.platform == 'win32':
+    class Loop(__BaseLoop):  # type: ignore[misc]
+        pass
+
+    # Create a dummy module for uvloop.loop so imports from it work
+    _loop_module = _types.ModuleType('uvloop.loop')
+    _loop_module.Loop = Loop
+    class _DummyFileSystemEvent:
+        pass
+    _loop_module.FileSystemEvent = _DummyFileSystemEvent
+    _sys.modules['uvloop.loop'] = _loop_module
+else:
+    class Loop(__BaseLoop, _AbstractEventLoop):  # type: ignore[misc]
+        pass
 
 
 def new_event_loop() -> Loop:
