@@ -4,7 +4,7 @@ vi = sys.version_info
 if vi < (3, 8):
     raise RuntimeError('uvloop requires Python 3.8 or greater')
 
-if sys.platform in ('win32', 'cygwin', 'cli'):
+if sys.platform in ('cygwin', 'cli'):
     raise RuntimeError('uvloop does not support Windows at the moment')
 
 import os
@@ -233,18 +233,18 @@ with open(str(_ROOT / 'uvloop' / '_version.py')) as f:
 
 setup_requires = []
 
-if not (_ROOT / 'uvloop' / 'loop.c').exists() or '--cython-always' in sys.argv:
-    # No Cython output, require Cython to build.
-    setup_requires.append(CYTHON_DEPENDENCY)
-
-
-setup(
-    version=VERSION,
-    cmdclass={
+if sys.platform == 'win32':
+    cmdclass = {}
+    ext_modules = []
+else:
+    if not (_ROOT / 'uvloop' / 'loop.c').exists() or '--cython-always' in sys.argv:
+        # No Cython output, require Cython to build.
+        setup_requires.append(CYTHON_DEPENDENCY)
+    cmdclass = {
         'sdist': uvloop_sdist,
         'build_ext': uvloop_build_ext
-    },
-    ext_modules=[
+    }
+    ext_modules = [
         Extension(
             "uvloop.loop",
             sources=[
@@ -252,6 +252,12 @@ setup(
             ],
             extra_compile_args=MODULES_CFLAGS
         ),
-    ],
+    ]
+
+
+setup(
+    version=VERSION,
+    cmdclass=cmdclass,
+    ext_modules=ext_modules,
     setup_requires=setup_requires,
 )
