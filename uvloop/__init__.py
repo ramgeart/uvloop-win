@@ -30,9 +30,9 @@ if _sys.platform == 'win32':
     # Create a dummy module for uvloop.loop so imports from it work
     _loop_module = _types.ModuleType('uvloop.loop')
     _loop_module.Loop = Loop
-    class DummyFileSystemEvent:
+    class _PlaceholderFileSystemEvent:
         pass
-    _loop_module.FileSystemEvent = DummyFileSystemEvent
+    _loop_module.FileSystemEvent = _PlaceholderFileSystemEvent
     _sys.modules['uvloop.loop'] = _loop_module
 else:
     class Loop(__BaseLoop, _AbstractEventLoop):  # type: ignore[misc]
